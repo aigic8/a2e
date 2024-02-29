@@ -1,0 +1,20 @@
+prefix: 'S'
+max_decimals: 4
+comments: True
+output_density: dense
+ignore_chemicals:
+  - PET
+ees_aliases:
+  C: Carbon
+  O2: Oxygen
+  N2: Nitrogen
+  CO: CarbonMonoxide
+  CO2: CarbonDioxide
+  H2O: Water
+  H2: Hydrogen
+  PET: PET
+  C2H4: C2H4
+  Methanol: Methanol
+  CH3OCH3: CH3OCH3
+  ASH: ASH
+  S: S

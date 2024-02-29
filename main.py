@@ -1,27 +1,30 @@
 import pandas as pd
 import numpy as np
 import sys
-from enum import StrEnum
 
+from pydantic import ValidationError
 
-class OutputDensity(StrEnum):
-    NORMAL = "normal"
-    DENSE = "dense"
-    WIDE = "wide"
+from config import load_config, OutputDensity
 
 
 MASS_FRACTION_INDEX = 3
 T_INDEX = "Temperature"
 P_INDEX = "Pressure"
 OUTPUT_FILE = "output.txt"
-PREFIX = "S"
 DATA_FILE = "data.csv"
-MAX_DECIMALS = 4
-COMMENTS = True
-OUTPUT_DENSITY = OutputDensity.DENSE
+CONFIG_PATH = "a2e.yaml"
 
 
 def main():
+    try:
+        c = load_config(CONFIG_PATH)
+    except ValidationError as e:
+        print("ERROR: configuration file has the following errors:")
+        for e in e.errors():
+            loc = [str(i) for i in e["loc"]]
+            print(f"\t{'.'.join(loc)} -> {e['msg']}")
+        sys.exit(1)
+
     df = pd.read_csv(DATA_FILE, header=0, index_col=0)
 
     try:
@@ -37,26 +40,8 @@ def main():
         np.vectorize(lambda c: c.startswith("S") and c != "SULFUR")(column_names)
     ]
 
-    ees_aliases = {
-        "C": "Carbon",
-        "O2": "Oxygen",
-        "N2": "Nitrogen",
-        "CO": "CarbonMonoxide",
-        "CO2": "CarbonDioxide",
-        "H2O": "Water",
-        "H2": "Hydrogen",
-        "PET": "PET",
-        "C2H4": "C2H4",
-        "Methanol": "Methanol",
-        "CH3OCH3": "CH3OCH3",
-        "ASH": "ASH",
-        "S": "S",
-    }
-
-    short_aliases = {"Methanol": "M"}
-
     for chem in chems:
-        if chem not in ees_aliases:
+        if chem not in c.ees_aliases:
             exit_with_err(f"ees alias for chemical {chem} does not exist")
 
     f = open(OUTPUT_FILE, "w")
@@ -64,24 +49,24 @@ def main():
     def write_line(line: str):
         f.write(line + "\n")
 
-    fp = float_printer(MAX_DECIMALS)
+    fp = float_printer(c.max_decimals)
     for chem in chems:
-        c = chem
-        if chem in short_aliases:
-            c = short_aliases[chem]
-        ees_chem = ees_aliases[chem]
-        write_line(f"h0_{c} = Enthalpy({ees_chem}, T=298.15, P=101.325)")
-        write_line(f"s0_{c} = Entropy({ees_chem}, T=298.15, P=101.325)")
+        ch = chem
+        if chem in c.short_aliases:
+            ch = c.short_aliases[chem]
+        ees_chem = c.ees_aliases[chem]
+        write_line(f"h0_{ch} = Enthalpy({ees_chem}, T=298.15, P=101.325)")
+        write_line(f"s0_{ch} = Entropy({ees_chem}, T=298.15, P=101.325)")
     write_line("")
 
-    should_print_chem_space = OUTPUT_DENSITY == OutputDensity.WIDE
-    should_print_stream_space = OUTPUT_DENSITY != OutputDensity.DENSE
+    should_print_chem_space = c.output_density == OutputDensity.WIDE
+    should_print_stream_space = c.output_density != OutputDensity.DENSE
 
     for stream in streams:
         stream_enthalpies = []
         stream_entropies = []
         stream_exergies = []
-        if COMMENTS:
+        if c.comments:
             write_line(f'"{stream}"')
         for chem in chems:
             mf = df[stream][chem]
@@ -90,11 +75,11 @@ def main():
             t = df[stream][T_INDEX]
             # pressure for the mass fraction
             p = df[stream][P_INDEX] * mf
-            ees_chem = ees_aliases[chem]
-            c = chem
-            if chem in short_aliases:
-                c = short_aliases[chem]
-            sc_suffix, _ = stream_chem_suffix(prefix=PREFIX, raw=stream, chem=c)
+            ees_chem = c.ees_aliases[chem]
+            ch = chem
+            if chem in c.short_aliases:
+                ch = c.short_aliases[chem]
+            sc_suffix, _ = stream_chem_suffix(prefix=c.prefix, raw=stream, chem=ch)
 
             enthalpy_name = f"h{sc_suffix}"
             entropy_name = f"s{sc_suffix}"
@@ -118,7 +103,7 @@ def main():
 
         t = df[stream][T_INDEX]
         p = df[stream][P_INDEX]
-        stream_num = get_stream_num(prefix=PREFIX, raw=stream)
+        stream_num = get_stream_num(prefix=c.prefix, raw=stream)
         s_suffix = f"[{stream_num}]" if stream_num != -1 else f"_{stream}"
         write_line(f"t{s_suffix} = {fp(t)}")
         write_line(f"p{s_suffix} = {fp(p)}")
