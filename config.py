@@ -10,7 +10,7 @@ class OutputDensity(StrEnum):
 
 
 class Config(BaseModel):
-    prefix: str
+    stream_prefix: str
     max_decimals: PositiveInt = 4
     comments: bool = True
     output_density: OutputDensity = OutputDensity.NORMAL

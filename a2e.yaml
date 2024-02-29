@@ -1,4 +1,4 @@
-prefix: 'S'
+stream_prefix: 'S'
 max_decimals: 4
 comments: True
 output_density: dense

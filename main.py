@@ -79,7 +79,9 @@ def main():
             ch = chem
             if chem in c.short_aliases:
                 ch = c.short_aliases[chem]
-            sc_suffix, _ = stream_chem_suffix(prefix=c.prefix, raw=stream, chem=ch)
+            sc_suffix, _ = stream_chem_suffix(
+                prefix=c.stream_prefix, raw=stream, chem=ch
+            )
 
             enthalpy_name = f"h{sc_suffix}"
             entropy_name = f"s{sc_suffix}"
@@ -103,7 +105,7 @@ def main():
 
         t = df[stream][T_INDEX]
         p = df[stream][P_INDEX]
-        stream_num = get_stream_num(prefix=c.prefix, raw=stream)
+        stream_num = get_stream_num(prefix=c.stream_prefix, raw=stream)
         s_suffix = f"[{stream_num}]" if stream_num != -1 else f"_{stream}"
         write_line(f"t{s_suffix} = {fp(t)}")
         write_line(f"p{s_suffix} = {fp(p)}")
