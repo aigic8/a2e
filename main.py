@@ -34,10 +34,15 @@ def main():
 
     indexes = df.index.to_numpy().astype(str)
     chems = indexes[MASS_FRACTION_INDEX + 1 :]
+    ignore_chems_dict = dict((ch, True) for ch in c.ignore_chemicals)
+    chems = list(filter(lambda ch: ch not in ignore_chems_dict, chems))
 
     column_names = df.columns.to_numpy(dtype=str)
+    ignore_stream_dict = dict([(s, True) for s in c.ignore_streams])
     streams = column_names[
-        np.vectorize(lambda c: c.startswith("S") and c != "SULFUR")(column_names)
+        np.vectorize(
+            lambda ch: ch.startswith(c.stream_prefix) and ch not in ignore_stream_dict
+        )(column_names)
     ]
 
     for chem in chems:
