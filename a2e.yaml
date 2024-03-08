@@ -1,6 +1,6 @@
 stream_prefix: 'S'
 max_decimals: 3
-comments: False
+comments: True
 output_density: normal
 only_prefixed_streams: True
 ignore_streams:

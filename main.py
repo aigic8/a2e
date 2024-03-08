@@ -11,8 +11,7 @@ from config import load_config, OutputDensity
 MASS_FRACTION_INDEX = 3
 T_INDEX = "Temperature"
 P_INDEX = "Pressure"
-OUTPUT_FILE = "output.txt"
-DATA_FILE = "data.csv"
+DEFAULT_INPUT_PATH = "data.csv"
 DEFAULT_CONFIG_PATH = "a2e.yaml"
 
 
@@ -20,6 +19,9 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "-c", "--config", help="configuration file path", default=DEFAULT_CONFIG_PATH
+    )
+    parser.add_argument(
+        "-i", "--input", help="input file path", default=DEFAULT_INPUT_PATH
     )
     args = parser.parse_args()
 
@@ -32,7 +34,7 @@ def main():
             print(f"\t{'.'.join(loc)} -> {e['msg']}")
         sys.exit(1)
 
-    df = pd.read_csv(DATA_FILE, header=0, index_col=0)
+    df = pd.read_csv(args.input, header=0, index_col=0)
 
     try:
         check_units(df)
@@ -64,7 +66,8 @@ def main():
         if chem not in c.ees_aliases:
             exit_with_err(f"ees alias for chemical {chem} does not exist")
 
-    f = open(OUTPUT_FILE, "w")
+    output_name = make_output_name(args.input)
+    f = open(output_name, "w")
 
     def write_line(line: str):
         f.write(line + "\n")
@@ -198,6 +201,10 @@ def stream_has_pressure_and_temp(df: pd.DataFrame, stream: str, print_res=True) 
             print(f"Stream '{stream}' is ignored because it does not have temperature")
         return False
     return True
+
+
+def make_output_name(input: str) -> str:
+    return f'{input.rsplit(".", maxsplit=1)[0]}.a2e.txt'
 
 
 if __name__ == "__main__":
