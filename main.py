@@ -45,7 +45,6 @@ def main():
     else:
         ignore_streams = c.ignore_streams
     ignore_stream_dict = dict([(s, True) for s in ignore_streams])
-    print(ignore_stream_dict)
     streams = column_names[
         np.vectorize(
             lambda st: st not in ignore_stream_dict
