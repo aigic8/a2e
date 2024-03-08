@@ -18,6 +18,7 @@ class Config(BaseModel):
     ignore_chemicals: list[str] = []
     ees_aliases: dict[str, str]
     short_aliases: dict[str, str] = {}
+    only_prefixed_streams: bool = False
 
 
 def load_config(config_path: str) -> Config:

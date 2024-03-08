@@ -38,10 +38,19 @@ def main():
     chems = list(filter(lambda ch: ch not in ignore_chems_dict, chems))
 
     column_names = df.columns.to_numpy(dtype=str)
-    ignore_stream_dict = dict([(s, True) for s in c.ignore_streams])
+    ignore_streams: list[str] = []
+    if "Units" not in c.ignore_streams:
+        ignore_streams = ["Units"]
+        ignore_streams.extend(c.ignore_streams)
+    else:
+        ignore_streams = c.ignore_streams
+    ignore_stream_dict = dict([(s, True) for s in ignore_streams])
+    print(ignore_stream_dict)
     streams = column_names[
         np.vectorize(
-            lambda ch: ch.startswith(c.stream_prefix) and ch not in ignore_stream_dict
+            lambda st: st not in ignore_stream_dict
+            and stream_has_pressure_and_temp(df, st)
+            and (not c.only_prefixed_streams or st.startswith(c.stream_prefix))
         )(column_names)
     ]
 
@@ -71,15 +80,15 @@ def main():
         stream_enthalpies = []
         stream_entropies = []
         stream_exergies = []
-        if c.comments:
-            write_line(f'"{stream}"')
         for chem in chems:
             mf = df[stream][chem]
             if mf == 0.0:
                 continue
+            if c.comments and len(stream_enthalpies) == 0:
+                write_line(f'"{stream}"')
             t = df[stream][T_INDEX]
             # pressure for the mass fraction
-            p = df[stream][P_INDEX] * mf
+            p = f"{fp(mf)} * {fp(df[stream][P_INDEX])}"
             ees_chem = c.ees_aliases[chem]
             ch = chem
             if chem in c.short_aliases:
@@ -94,7 +103,7 @@ def main():
             t_name = f"t{sc_suffix}"
             p_name = f"p{sc_suffix}"
             write_line(f"{t_name} = {fp(t)}")
-            write_line(f"{p_name} = {fp(p)}")
+            write_line(f"{p_name} = {p}")
             write_line(
                 f"{enthalpy_name} = Enthalpy({ees_chem}, T={t_name}, P={p_name})"
             )
@@ -102,12 +111,14 @@ def main():
             write_line(f"{entropy_name} = Entropy({ees_chem}, T={t_name}, P={p_name})")
             stream_entropies.append(entropy_name)
             write_line(
-                f"{exergy_name} = {fp(mf)} * (({enthalpy_name} - h0_{c}) - 298.15 * ({entropy_name} - s0_{c}))"
+                f"{exergy_name} = {fp(mf)} * (({enthalpy_name} - h0_{ch}) - 298.15 * ({entropy_name} - s0_{ch}))"
             )
             stream_exergies.append(exergy_name)
             if should_print_chem_space:
                 write_line("")
 
+        if len(stream_enthalpies) == 0:
+            continue
         t = df[stream][T_INDEX]
         p = df[stream][P_INDEX]
         stream_num = get_stream_num(prefix=c.stream_prefix, raw=stream)
@@ -166,6 +177,20 @@ def float_printer(decimals: int):
         return res
 
     return printer
+
+
+def stream_has_pressure_and_temp(df: pd.DataFrame, stream: str, print_res=True) -> bool:
+    p = df[stream][P_INDEX]
+    t = df[stream][T_INDEX]
+    if not isinstance(p, float) and not isinstance(p, int):
+        if print_res:
+            print(f"Stream '{stream}' is ignored because it does not have pressure")
+        return False
+    if not isinstance(t, float) and not isinstance(t, int):
+        if print_res:
+            print(f"Stream '{stream}' is ignored because it does not have temperature")
+        return False
+    return True
 
 
 if __name__ == "__main__":

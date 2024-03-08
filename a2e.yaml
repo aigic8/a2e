@@ -2,8 +2,13 @@ stream_prefix: 'S'
 max_decimals: 4
 comments: True
 output_density: dense
+only_prefixed_streams: False
+ignore_streams:
+  - SULFUR
+  - H2O-CO2(CO2H2O)
 ignore_chemicals:
   - PET
+  - H2O
 ees_aliases:
   C: Carbon
   O2: Oxygen
