@@ -1,6 +1,7 @@
 import pandas as pd
 import numpy as np
 import sys
+import argparse
 
 from pydantic import ValidationError
 
@@ -12,12 +13,18 @@ T_INDEX = "Temperature"
 P_INDEX = "Pressure"
 OUTPUT_FILE = "output.txt"
 DATA_FILE = "data.csv"
-CONFIG_PATH = "a2e.yaml"
+DEFAULT_CONFIG_PATH = "a2e.yaml"
 
 
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "-c", "--config", help="configuration file path", default=DEFAULT_CONFIG_PATH
+    )
+    args = parser.parse_args()
+
     try:
-        c = load_config(CONFIG_PATH)
+        c = load_config(args.config)
     except ValidationError as e:
         print("ERROR: configuration file has the following errors:")
         for e in e.errors():
@@ -118,17 +125,16 @@ def main():
             if should_print_chem_space:
                 write_line("")
 
-        if len(stream_enthalpies) == 0 or not should_print_stream_info:
-            continue
-        t = df[stream][T_INDEX]
-        p = df[stream][P_INDEX]
-        stream_num = get_stream_num(prefix=c.stream_prefix, raw=stream)
-        s_suffix = f"[{stream_num}]" if stream_num != -1 else f"_{stream}"
-        write_line(f"t{s_suffix} = {fp(t)}")
-        write_line(f"p{s_suffix} = {fp(p)}")
-        write_line(f"h{s_suffix} = {' + '.join(stream_enthalpies)}")
-        write_line(f"s{s_suffix} = {' + '.join(stream_entropies)}")
-        write_line(f"EX{s_suffix} = {' + '.join(stream_exergies)}")
+        if len(stream_enthalpies) != 0 and should_print_stream_info:
+            t = df[stream][T_INDEX]
+            p = df[stream][P_INDEX]
+            stream_num = get_stream_num(prefix=c.stream_prefix, raw=stream)
+            s_suffix = f"[{stream_num}]" if stream_num != -1 else f"_{stream}"
+            write_line(f"t{s_suffix} = {fp(t)}")
+            write_line(f"p{s_suffix} = {fp(p)}")
+            write_line(f"h{s_suffix} = {' + '.join(stream_enthalpies)}")
+            write_line(f"s{s_suffix} = {' + '.join(stream_entropies)}")
+            write_line(f"EX{s_suffix} = {' + '.join(stream_exergies)}")
         if should_print_stream_space:
             write_line("")
 
