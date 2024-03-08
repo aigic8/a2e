@@ -18,10 +18,16 @@ DEFAULT_CONFIG_PATH = "a2e.yaml"
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument(
-        "-c", "--config", help="configuration file path", default=DEFAULT_CONFIG_PATH
+        "-c",
+        "--config",
+        help=f"configuration file path (DEFAULT={DEFAULT_CONFIG_PATH})",
+        default=DEFAULT_CONFIG_PATH,
     )
     parser.add_argument(
-        "-i", "--input", help="input file path", default=DEFAULT_INPUT_PATH
+        "-i",
+        "--input",
+        help=f"input file path (DEFAULT={DEFAULT_INPUT_PATH})",
+        default=DEFAULT_INPUT_PATH,
     )
     args = parser.parse_args()
 
