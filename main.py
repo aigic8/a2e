@@ -74,6 +74,8 @@ def main():
 
     should_print_chem_space = c.output_density == OutputDensity.WIDE
     should_print_stream_space = c.output_density != OutputDensity.DENSE
+    # if there are ignored chemicals, streams info is not printed because it corrupt
+    should_print_stream_info = len(ignore_chems_dict) == 0
 
     for stream in streams:
         stream_enthalpies = []
@@ -116,7 +118,7 @@ def main():
             if should_print_chem_space:
                 write_line("")
 
-        if len(stream_enthalpies) == 0:
+        if len(stream_enthalpies) == 0 or not should_print_stream_info:
             continue
         t = df[stream][T_INDEX]
         p = df[stream][P_INDEX]
